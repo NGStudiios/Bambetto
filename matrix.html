@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Secuencia Matrix - NeuroMente</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            overflow-y: auto;
+            background: black;
+        }
+
+        #matrix-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            opacity: 0.3;
+        }
+
+        .game-overlay {
+            position: relative;
+            z-index: 10;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+        }
+
+        .matrix-cell {
+            border: 1px solid #00ff41 !important;
+            background: rgba(0, 255, 65, 0.05);
+        }
+
+        .matrix-cell.active {
+            background: #00ff41 !important;
+            box-shadow: 0 0 25px #00ff41 !important;
+        }
+
+        .primary-btn {
+            background: #00ff41;
+            color: black;
+            font-family: 'Courier New', Courier, monospace;
+            font-weight: bold;
+        }
+
+        .gradient-text {
+            background: linear-gradient(135deg, #00ff41 0%, #008f11 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .back-btn {
+            color: #00ff41;
+            border-color: #00ff41;
+        }
+
+        .setting-item label {
+            font-family: 'Courier New', monospace;
+            font-size: 0.8rem;
+            margin-right: 10px;
+        }
+
+        .setting-input {
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid #00ff41;
+            color: #00ff41;
+            width: 70px;
+            padding: 8px;
+            text-align: center;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+        }
+
+        .setting-input:focus {
+            outline: none;
+            box-shadow: 0 0 10px #00ff41;
+        }
+    </style>
+</head>
+
+<body class="dark-theme">
+    <canvas id="matrix-canvas"></canvas>
+
+    <div class="game-overlay">
+        <nav class="glass-nav" style="position: static; margin-bottom: 20px; background: rgba(0,0,0,0.5);">
+            <a href="index.html" class="logo">Neuro<span>Mente</span></a>
+            <div class="streak-badge" style="border-color: #00ff41; color: #00ff41;">
+                <i class="fire-icon">🔥</i>
+                <span id="global-streak">0 días</span>
+            </div>
+        </nav>
+
+        <div class="game-header">
+            <a href="index.html" class="back-btn" style="text-decoration: none;">← Salir</a>
+            <div class="game-stats" style="color: #00ff41;">
+                <span>Nivel: <b id="matrix-level">1 (3x3)</b></span>
+                <span>Puntos: <b id="matrix-score">0</b></span>
+            </div>
+        </div>
+
+        <div class="matrix-container" id="matrix-board">
+            <!-- Matrix grid generated here -->
+        </div>
+
+        <div class="game-controls" style="margin-top: 40px; padding-bottom: 60px; text-align: center;">
+            <div class="game-settings"
+                style="display: flex; flex-wrap: wrap; gap: 20px; justify-content: center; margin-bottom: 30px; color: #00ff41; align-items: center;">
+                <div class="setting-item">
+                    <label>NIVEL INICIAL:</label>
+                    <input type="number" id="matrix-start-level" class="setting-input" value="1" min="1" max="100">
+                </div>
+                <div class="setting-item">
+                    <label>RONDAS POR TAMAÑO:</label>
+                    <input type="number" id="matrix-rounds-cfg" class="setting-input" value="3" min="1" max="20">
+                </div>
+            </div>
+            <button id="matrix-start-btn" class="primary-btn"
+                style="padding: 15px 40px; font-size: 1.2rem; cursor: pointer; border-radius: 50px; border: 2px solid #00ff41;">INICIAR
+                SECUENCIA</button>
+        </div>
+    </div>
+
+    <div id="notification" class="notification hidden" style="background: #008f11;"></div>
+
+    <script src="js/main.js"></script>
+    <script>
+        // Matrix Background Effect
+        const canvas = document.getElementById('matrix-canvas');
+        const ctx = canvas.getContext('2d');
+
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+        const fontSize = 16;
+        const columns = canvas.width / fontSize;
+        const drops = [];
+
+        for (let i = 0; i < columns; i++) drops[i] = 1;
+
+        function drawMatrix() {
+            ctx.fillStyle = "rgba(0, 0, 0, 0.05)";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = "#00ff41";
+            ctx.font = fontSize + "px arial";
+
+            for (let i = 0; i < drops.length; i++) {
+                const text = letters.charAt(Math.floor(Math.random() * letters.length));
+                ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+                if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) drops[i] = 0;
+                drops[i]++;
+            }
+        }
+        setInterval(drawMatrix, 33);
+    </script>
+    <script src="js/matrix.js"></script>
+</body>
+
+</html>

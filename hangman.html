@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ahorcado - NeuroMente</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        .hangman-area {
+            display: flex;
+            align-items: center;
+            justify-content: space-around;
+            flex-wrap: wrap;
+            margin: 20px 0;
+            gap: 40px;
+        }
+
+        canvas {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 20px;
+            border: 1px solid var(--glass-border);
+        }
+
+        .hangman-info {
+            text-align: center;
+            flex: 1;
+            min-width: 300px;
+        }
+
+        .mode-switch {
+            background: var(--glass-bg);
+            padding: 5px;
+            border-radius: 12px;
+            display: inline-flex;
+            gap: 5px;
+            margin-bottom: 20px;
+        }
+
+        .mode-switch button {
+            background: none;
+            border: none;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .mode-switch button.active {
+            background: var(--accent-blue);
+        }
+
+        .game-over-anim {
+            animation: fall-off 1s forwards;
+        }
+
+        @keyframes fall-off {
+            0% {
+                transform: translateY(0);
+            }
+
+            100% {
+                transform: translateY(200px) rotate(20deg);
+                opacity: 0;
+            }
+        }
+    </style>
+</head>
+
+<body class="dark-theme">
+    <nav class="glass-nav">
+        <a href="index.html" class="logo">Neuro<span>Mente</span></a>
+        <div class="streak-badge">
+            <i class="fire-icon">🔥</i>
+            <span id="global-streak">0 días</span>
+        </div>
+    </nav>
+
+    <main class="container">
+        <div class="game-header">
+            <a href="flags.html" class="back-btn" style="text-decoration: none;">← Volver</a>
+            <div class="mode-switch">
+                <button id="mode-flags" class="active" onclick="switchHangmanMode('flags')">Países</button>
+                <button id="mode-capitals" onclick="switchHangmanMode('capitals')">Capitales</button>
+            </div>
+            <div class="game-stats">
+                <span>Vidas: <b id="hangman-lives">7</b></span>
+            </div>
+        </div>
+
+        <div class="hangman-area">
+            <div class="hangman-visual">
+                <canvas id="hangman-canvas" width="300" height="350"></canvas>
+            </div>
+            <div class="hangman-info">
+                <div id="hint-container">
+                    <!-- Flag or text hint -->
+                </div>
+                <div class="hangman-display" id="hangman-word"></div>
+                <div class="keyboard" id="keyboard"></div>
+            </div>
+        </div>
+    </main>
+
+    <div id="notification" class="notification hidden"></div>
+
+    <script src="js/data.js"></script>
+    <script src="js/main.js"></script>
+    <script>
+        let hangman = {
+            mode: 'flags', // flags, capitals
+            word: '',
+            hidden: [],
+            lives: 7,
+            currentCountry: null,
+            canvas: null,
+            ctx: null
+        };
+
+        document.addEventListener('DOMContentLoaded', () => {
+            hangman.canvas = document.getElementById('hangman-canvas');
+            hangman.ctx = hangman.canvas.getContext('2d');
+            initHangmanGame();
+        });
+
+        function switchHangmanMode(m) {
+            hangman.mode = m;
+            document.querySelectorAll('.mode-switch button').forEach(b => b.classList.remove('active'));
+            document.getElementById(`mode-${m}`).classList.add('active');
+            initHangmanGame();
+        }
+
+        function initHangmanGame() {
+            hangman.lives = 7;
+            hangman.currentCountry = countriesData[Math.floor(Math.random() * countriesData.length)];
+
+            if (hangman.mode === 'flags') {
+                hangman.word = hangman.currentCountry.name.toUpperCase();
+                document.getElementById('hint-container').innerHTML = `
+                    <div style="margin-bottom: 20px;">
+                        <span style="font-size: 3rem;">🌍</span>
+                        <h3>Adivina el País</h3>
+                    </div>`;
+            } else {
+                hangman.word = hangman.currentCountry.capital.toUpperCase();
+                document.getElementById('hint-container').innerHTML = `<h3 style="margin-bottom: 10px;">Capital de: <span class="gradient-text">${hangman.currentCountry.name}</span></h3>`;
+            }
+
+            // Handle multi-word names
+            hangman.hidden = hangman.word.split('').map(c => {
+                if (c === ' ') return '&nbsp;&nbsp;'; // Visual gap for spaces
+                if (c === '-' || c === '.') return c;
+                return '_';
+            });
+
+            document.getElementById('hangman-lives').innerText = hangman.lives;
+            updateWordDisplay();
+            renderKeyboard();
+            clearCanvas();
+            drawGallows();
+        }
+
+        function updateWordDisplay() {
+            // Join with thin space, but respect the big gaps we added for actual spaces
+            document.getElementById('hangman-word').innerHTML = hangman.hidden.map(c => {
+                if (c === '&nbsp;&nbsp;') return '<span style="display:inline-block; width: 30px;"></span>';
+                return `<span>${c}</span>`;
+            }).join(' ');
+        }
+
+        function renderKeyboard() {
+            const kb = document.getElementById('keyboard');
+            kb.innerHTML = '';
+            'ABCDEFGHIJKLMNÑOPQRSTUVWXYZ'.split('').forEach(l => {
+                const b = document.createElement('button');
+                b.innerText = l;
+                b.onclick = () => guess(l, b);
+                kb.appendChild(b);
+            });
+        }
+
+        function guess(letter, btn) {
+            btn.disabled = true;
+            let found = false;
+            const norm = (s) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+            const goal = norm(letter);
+
+            hangman.word.split('').forEach((char, i) => {
+                if (norm(char) === goal) {
+                    hangman.hidden[i] = char;
+                    found = true;
+                }
+            });
+
+            if (found) {
+                btn.style.background = 'var(--accent-teal)';
+                updateWordDisplay();
+                if (!hangman.hidden.includes('_')) {
+                    showNotification('¡Ganaste! 🏆');
+                    markDayComplete();
+                    setTimeout(initHangmanGame, 2000);
+                }
+            } else {
+                btn.style.background = '#ef4444';
+                hangman.lives--;
+                document.getElementById('hangman-lives').innerText = hangman.lives;
+                drawBodyPart(7 - hangman.lives);
+                if (hangman.lives <= 0) gameOver();
+            }
+        }
+
+        function clearCanvas() {
+            hangman.ctx.clearRect(0, 0, hangman.canvas.width, hangman.canvas.height);
+            hangman.ctx.strokeStyle = '#00ff41';
+            hangman.ctx.lineWidth = 4;
+            hangman.ctx.lineCap = 'round';
+        }
+
+        function drawGallows() {
+            const ctx = hangman.ctx;
+            ctx.beginPath();
+            ctx.moveTo(50, 320); ctx.lineTo(250, 320); // Base
+            ctx.moveTo(100, 320); ctx.lineTo(100, 50); // Pillar
+            ctx.lineTo(220, 50); // Top
+            ctx.lineTo(220, 80); // Rope
+            ctx.stroke();
+        }
+
+        function drawBodyPart(part) {
+            const ctx = hangman.ctx;
+            ctx.beginPath();
+            switch (part) {
+                case 1: ctx.arc(220, 110, 30, 0, Math.PI * 2); break; // Head
+                case 2: ctx.moveTo(220, 140); ctx.lineTo(220, 240); break; // Torso
+                case 3: ctx.moveTo(220, 160); ctx.lineTo(180, 210); break; // Left Arm
+                case 4: ctx.moveTo(220, 160); ctx.lineTo(260, 210); break; // Right Arm
+                case 5: ctx.moveTo(220, 240); ctx.lineTo(180, 300); break; // Left Leg
+                case 6: ctx.moveTo(220, 240); ctx.lineTo(260, 300); break; // Right Leg
+                case 7: // Final step, draw face or something
+                    ctx.moveTo(205, 100); ctx.lineTo(215, 110); ctx.moveTo(215, 100); ctx.lineTo(205, 110); // X eye
+                    ctx.moveTo(225, 100); ctx.lineTo(235, 110); ctx.moveTo(235, 100); ctx.lineTo(225, 110); // X eye
+                    break;
+            }
+            ctx.stroke();
+        }
+
+        function gameOver() {
+            showNotification(`La palabra era: ${hangman.word}`);
+            const visual = document.querySelector('.hangman-visual');
+            visual.classList.add('game-over-anim');
+            setTimeout(() => {
+                visual.classList.remove('game-over-anim');
+                initHangmanGame();
+            }, 1500);
+        }
+    </script>
+</body>
+
+</html>

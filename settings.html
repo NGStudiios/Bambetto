@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ajustes - NeuroMente</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        .settings-container {
+            max-width: 600px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+        }
+
+        .setting-section {
+            padding: 25px;
+        }
+
+        .setting-row {
+            margin-bottom: 25px;
+        }
+
+        .setting-row label {
+            display: block;
+            margin-bottom: 12px;
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+
+        /* Mode Toggle */
+        .mode-toggle {
+            display: flex;
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            padding: 5px;
+        }
+
+        .mode-btn {
+            flex: 1;
+            padding: 12px;
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .mode-btn.active {
+            background: var(--accent-green);
+            color: black;
+            font-weight: bold;
+        }
+
+        /* Accent Color */
+        .color-picker-wrapper {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        input[type="color"] {
+            -webkit-appearance: none;
+            border: none;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            cursor: pointer;
+            padding: 0;
+            background: none;
+        }
+
+        input[type="color"]::-webkit-color-swatch-wrapper {
+            padding: 0;
+        }
+
+        input[type="color"]::-webkit-color-swatch {
+            border: 2px solid var(--glass-border);
+            border-radius: 50%;
+        }
+
+        .theme-preview {
+            height: 100px;
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-top: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: var(--bg-dark);
+            transition: background 0.3s ease;
+        }
+    </style>
+</head>
+
+<body class="dark-theme">
+    <nav class="glass-nav">
+        <a href="index.html" class="logo">Neuro<span>Mente</span></a>
+        <div class="streak-badge">
+            <i class="fire-icon">🔥</i>
+            <span id="global-streak">0</span>
+        </div>
+    </nav>
+
+    <main class="container">
+        <header class="section-header">
+            <h1 class="gradient-text">Personalización</h1>
+            <p>Adapta la interfaz a tu estilo visual.</p>
+        </header>
+
+        <div class="settings-container">
+            <div class="setting-section glass">
+
+                <div class="setting-row">
+                    <label>Gestión de Datos</label>
+                    <p style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 15px;">
+                        Esta acción eliminará todo tu progreso, récords y configuraciones guardadas.
+                    </p>
+                    <button onclick="deleteAllData()" class="primary-btn"
+                        style="background: #ef4444; width: 100%; box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);">
+                        Borrar Registro Completo
+                    </button>
+                </div>
+
+                <!-- Removed Mode Toggle as requested -->
+            </div>
+        </div>
+    </main>
+
+    <!-- Bottom Nav -->
+    <div class="mobile-nav">
+        <a href="index.html" class="nav-item">
+            <i>🏠</i>
+            <span>Inicio</span>
+        </a>
+        <a href="entrenar.html" class="nav-item">
+            <i>🎯</i>
+            <span>Entrenar</span>
+        </a>
+        <a href="settings.html" class="nav-item active">
+            <i>⚙️</i>
+            <span>Ajustes</span>
+        </a>
+    </div>
+
+    <script src="js/main.js"></script>
+    <script>
+        const root = document.documentElement;
+        const modeBtns = document.querySelectorAll('.mode-btn');
+
+        // Defaults
+        const DARK_BG = '#05070a';
+        const DARK_TEXT = '#f8fafc';
+        const LIGHT_BG = '#f0f9ff';
+        const LIGHT_TEXT = '#0f172a';
+
+        // Load saved settings
+        const savedMode = localStorage.getItem('theme-mode') || 'dark';
+
+        // Init
+        setMode(savedMode);
+
+        // Listeners for Mode
+        function setMode(mode) {
+            // Update buttons
+            modeBtns.forEach(btn => {
+                if (btn.dataset.mode === mode) btn.classList.add('active');
+                else btn.classList.remove('active');
+            });
+
+            // Apply variables
+            if (mode === 'dark') {
+                root.style.setProperty('--bg-dark', DARK_BG);
+                root.style.setProperty('--text-primary', DARK_TEXT);
+            } else {
+                root.style.setProperty('--bg-dark', LIGHT_BG);
+                root.style.setProperty('--text-primary', LIGHT_TEXT);
+            }
+
+            localStorage.setItem('theme-mode', mode);
+        }
+
+        function deleteAllData() {
+            if (confirm('⚠️ ¿Estás seguro de que quieres borrar TODO tu progreso?\n\nEsta acción no se puede deshacer.')) {
+                if (confirm('Última confirmación: Se borrarán todos tus récords, racha y datos guardados.')) {
+                    localStorage.clear();
+                    showNotification('✅ Todos los datos han sido eliminados');
+                    setTimeout(() => {
+                        window.location.href = 'index.html';
+                    }, 1500);
+                }
+            }
+        }
+    </script>
+</body>
+
+</html>

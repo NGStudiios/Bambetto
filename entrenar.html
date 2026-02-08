@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Entrenar - NeuroMente</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        .games-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+            padding-bottom: 100px;
+        }
+
+        @media (min-width: 768px) {
+            .games-grid {
+                grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            }
+        }
+
+        .game-card img {
+            width: 100%;
+            height: 140px;
+            object-fit: cover;
+            border-radius: 15px;
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+
+<body class="dark-theme">
+    <nav class="glass-nav">
+        <a href="index.html" class="logo">Neuro<span>Mente</span></a>
+        <div class="streak-badge">
+            <i class="fire-icon">🔥</i>
+            <span id="global-streak">0</span>
+        </div>
+    </nav>
+
+    <main class="container">
+        <header class="section-header">
+            <h1 class="gradient-text">Zona de Entrenamiento</h1>
+            <p>Selecciona tu disciplina diaria.</p>
+        </header>
+
+        <div class="games-grid">
+            <!-- Matrix Game -->
+            <a href="matrix.html" class="game-card glass">
+                <img src="https://images.unsplash.com/photo-1550751827-4bd374c3f58b?auto=format&fit=crop&w=800&q=80"
+                    alt="Matrix">
+                <div class="game-info">
+                    <h3>Secuencia Matrix</h3>
+                    <p>Memoria visual y expansión de patrones dinámicos.</p>
+                    <span class="btn-play">Jugar</span>
+                </div>
+            </a>
+
+            <!-- Flags Game -->
+            <a href="flags.html" class="game-card glass">
+                <img src="https://images.unsplash.com/photo-1526778548025-fa2f459cd5c1?auto=format&fit=crop&w=800&q=80"
+                    alt="Banderas">
+                <div class="game-info">
+                    <h3>Banderas del Mundo</h3>
+                    <p>Geografía, identificación y cultura global.</p>
+                    <span class="btn-play">Jugar</span>
+                </div>
+            </a>
+
+            <!-- Sudoku Game -->
+            <a href="sudoku.html" class="game-card glass">
+                <img src="https://images.unsplash.com/photo-1611996575749-79a3a250f948?auto=format&fit=crop&w=800&q=80"
+                    alt="Sudoku">
+                <div class="game-info">
+                    <h3>Sudoku</h3>
+                    <p>Lógica numérica y resolución de puzzles clásicos.</p>
+                    <span class="btn-play">Jugar</span>
+                </div>
+            </a>
+
+            <!-- Wordle Palabras -->
+            <a href="wordle-palabras.html" class="game-card glass">
+                <img src="https://images.unsplash.com/photo-1519791883288-dc8bd696e667?auto=format&fit=crop&w=800&q=80"
+                    alt="Wordle">
+                <div class="game-info">
+                    <h3>Wordle Palabras</h3>
+                    <p>Adivina la palabra de 5 letras en 6 intentos.</p>
+                    <span class="btn-play">Jugar</span>
+                </div>
+            </a>
+
+            <!-- Tetris -->
+            <a href="tetris.html" class="game-card glass">
+                <img src="https://images.unsplash.com/photo-1614294148960-9aa740632a87?auto=format&fit=crop&w=800&q=80"
+                    alt="Tetris">
+                <div class="game-info">
+                    <h3>Tetris</h3>
+                    <p>Clásico juego de bloques y estrategia espacial.</p>
+                    <span class="btn-play">Jugar</span>
+                </div>
+            </a>
+        </div>
+    </main>
+
+    <!-- Bottom Nav -->
+    <div class="mobile-nav">
+        <a href="index.html" class="nav-item">
+            <i>🏠</i>
+            <span>Inicio</span>
+        </a>
+        <a href="entrenar.html" class="nav-item active">
+            <i>🎯</i>
+            <span>Entrenar</span>
+        </a>
+        <a href="settings.html" class="nav-item">
+            <i>⚙️</i>
+            <span>Ajustes</span>
+        </a>
+    </div>
+
+    <script src="js/main.js"></script>
+</body>
+
+</html>
