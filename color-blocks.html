@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Color Pop - Bambetto</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/layout.css">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        :root {
+            --game-accent: #3b82f6;
+        }
+
+        .game-container {
+            max-width: 600px;
+            margin: 40px auto;
+            text-align: center;
+            perspective: 1000px;
+        }
+
+        .stats-bar {
+            display: flex;
+            justify-content: space-between;
+            background: rgba(30, 41, 59, 0.4);
+            padding: 20px 30px;
+            border-radius: 20px;
+            margin-bottom: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            font-weight: 700;
+        }
+
+        #color-grid {
+            display: grid;
+            gap: 12px;
+            background: rgba(15, 23, 42, 0.3);
+            padding: 15px;
+            border-radius: 24px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            aspect-ratio: 1/1;
+            margin: 0 auto;
+            max-width: 500px;
+        }
+
+        .color-block {
+            border-radius: 12px;
+            cursor: pointer;
+            transition: transform 0.2s ease, filter 0.2s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .color-block:hover {
+            transform: scale(0.98);
+        }
+
+        .color-block:active {
+            transform: scale(0.95);
+        }
+
+        .color-block.correct {
+            animation: pulseCorrect 0.5s ease;
+        }
+
+        .color-block.wrong {
+            animation: shake 0.4s ease;
+        }
+
+        @keyframes pulseCorrect {
+            0% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.15);
+                box-shadow: 0 0 30px currentColor;
+            }
+
+            100% {
+                transform: scale(1);
+            }
+        }
+
+        @keyframes shake {
+
+            0%,
+            100% {
+                transform: translateX(0);
+            }
+
+            25% {
+                transform: translateX(-10px);
+            }
+
+            75% {
+                transform: translateX(10px);
+            }
+        }
+
+        .progress-container {
+            width: 100%;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            margin-top: 30px;
+            overflow: hidden;
+        }
+
+        #timer-bar {
+            height: 100%;
+            background: var(--game-accent);
+            width: 100%;
+            transition: width 0.1s linear;
+        }
+
+        .timer-warning {
+            background: #ef4444 !important;
+            box-shadow: 0 0 15px #ef4444;
+        }
+
+        .start-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(2, 6, 23, 0.95);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            backdrop-filter: blur(10px);
+        }
+
+        .overlay-content {
+            text-align: center;
+            padding: 40px;
+            max-width: 400px;
+        }
+
+        .btn-start {
+            background: var(--game-accent);
+            color: white;
+            border: none;
+            padding: 18px 45px;
+            border-radius: 50px;
+            font-size: 1.3rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 25px;
+            box-shadow: 0 10px 25px rgba(59, 130, 246, 0.3);
+        }
+
+        .btn-start:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 35px rgba(59, 130, 246, 0.5);
+        }
+    </style>
+</head>
+
+<body class="dark-theme">
+    <nav class="glass-nav">
+        <a href="index.html" class="logo gradient-text" style="font-size: 2rem;">Bambetto</a>
+    </nav>
+
+    <!-- Sidebar Nav -->
+    <div class="side-bar">
+        <div class="lives-widget">
+            <span class="lives-count">5</span>
+            <span class="lives-icon">❤️</span>
+        </div>
+        <a href="index.html" class="side-item">
+            <i data-lucide="map"></i>
+            <span>Mapa</span>
+        </a>
+        <a href="juegos.html" class="side-item active">
+            <i data-lucide="layout-grid"></i>
+            <span>Arcade</span>
+        </a>
+        <a href="settings.html" class="side-item">
+            <i data-lucide="settings"></i>
+            <span>Ajustes</span>
+        </a>
+    </div>
+
+    <main class="container">
+        <div class="game-container">
+            <header class="section-header">
+                <h1 class="gradient-text">Color Pop</h1>
+                <p>Encuentra el bloque con el color diferente.</p>
+            </header>
+
+            <div class="stats-bar">
+                <div>NIVEL: <span id="level-val">1</span></div>
+                <div>PUNTOS: <span id="score-val">0</span></div>
+            </div>
+
+            <div id="color-grid"></div>
+
+            <div class="progress-container">
+                <div id="timer-bar"></div>
+            </div>
+        </div>
+    </main>
+
+    <div class="start-overlay" id="start-screen">
+        <div class="overlay-content">
+            <h1 class="gradient-text" style="font-size: 3rem; margin-bottom: 10px;">¡Bambetto!</h1>
+            <p style="color: var(--text-slate);">Entrena tu agudeza visual. Haz clic en el bloque que tiene una
+                tonalidad distinta.</p>
+            <button class="btn-start" onclick="startGame()">Comenzar</button>
+        </div>
+    </div>
+
+    <script src="js/main.js"></script>
+    <script>
+        let score = 0;
+        let level = 1;
+        let timeLeft = 15;
+        let timerInterval;
+        let diffFactor = 50; // Initial color difference
+
+        const grid = document.getElementById('color-grid');
+        const scoreEl = document.getElementById('score-val');
+        const levelEl = document.getElementById('level-val');
+        const timerBar = document.getElementById('timer-bar');
+
+        function generateLevel() {
+            grid.innerHTML = '';
+
+            // Grid size increases with level
+            let size = 2;
+            if (level > 2) size = 3;
+            if (level > 6) size = 4;
+            if (level > 12) size = 5;
+            if (level > 20) size = 6;
+            if (level > 30) size = 8;
+
+            grid.style.gridTemplateColumns = `repeat(${size}, 1fr)`;
+
+            // Random Base Color
+            const h = Math.floor(Math.random() * 360);
+            const s = Math.floor(Math.random() * 60) + 20;
+            const l = Math.floor(Math.random() * 40) + 30;
+
+            const baseColor = `hsl(${h}, ${s}%, ${l}%)`;
+
+            // Different Color (slightly lighter or darker)
+            diffFactor = Math.max(2, 50 - (level * 1.5)); // Gets harder
+            const diffL = Math.random() > 0.5 ? l + diffFactor : l - diffFactor;
+            const diffColor = `hsl(${h}, ${s}%, ${diffL}%)`;
+
+            const totalBlocks = size * size;
+            const targetIdx = Math.floor(Math.random() * totalBlocks);
+
+            for (let i = 0; i < totalBlocks; i++) {
+                const block = document.createElement('div');
+                block.className = 'color-block';
+                block.style.backgroundColor = (i === targetIdx) ? diffColor : baseColor;
+
+                block.onclick = () => {
+                    if (i === targetIdx) {
+                        handleCorrect(block);
+                    } else {
+                        handleWrong(block);
+                    }
+                };
+                grid.appendChild(block);
+            }
+        }
+
+        function handleCorrect(block) {
+            block.classList.add('correct');
+            score += 10 + level;
+            level++;
+            scoreEl.textContent = score;
+            levelEl.textContent = level;
+            timeLeft = Math.min(15, timeLeft + 2); // Add time bonus
+            setTimeout(generateLevel, 200);
+        }
+
+        function handleWrong(block) {
+            block.classList.add('wrong');
+            timeLeft -= 3; // Time penalty
+            setTimeout(() => block.classList.remove('wrong'), 400);
+        }
+
+        function startGame() {
+            document.getElementById('start-screen').style.display = 'none';
+            score = 0;
+            level = 1;
+            timeLeft = 15;
+            scoreEl.textContent = "0";
+            levelEl.textContent = "1";
+            generateLevel();
+
+            timerInterval = setInterval(() => {
+                timeLeft -= 0.1;
+                const percentage = (timeLeft / 15) * 100;
+                timerBar.style.width = percentage + '%';
+
+                if (timeLeft < 5) {
+                    timerBar.classList.add('timer-warning');
+                } else {
+                    timerBar.classList.remove('timer-warning');
+                }
+
+                if (timeLeft <= 0) {
+                    endGame();
+                }
+            }, 100);
+        }
+
+        function endGame() {
+            clearInterval(timerInterval);
+            alert(`¡Tiempo agotado!\nPuntuación final: ${score}\nNivel alcanzado: ${level}`);
+            document.getElementById('start-screen').style.display = 'flex';
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+        });
+    </script>
+</body>
+
+</html>

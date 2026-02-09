@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Protocolo de Evacuación: Bambetto City</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&family=Inter:wght@400;700&display=swap"
+        rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            font-family: 'Inter', sans-serif;
+            background-color: #020617;
+            touch-action: none;
+        }
+
+        canvas {
+            display: block;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        #ui-container {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            z-index: 20;
+            pointer-events: none;
+        }
+
+        .bottom-bar {
+            background: rgba(15, 23, 42, 0.95);
+            backdrop-filter: blur(15px);
+            border-top: 2px solid rgba(59, 130, 246, 0.5);
+            border-radius: 2rem 2rem 0 0;
+            pointer-events: auto;
+        }
+
+        #start-screen,
+        #game-over {
+            position: fixed;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(2, 6, 23, 0.9);
+            z-index: 100;
+            backdrop-filter: blur(12px);
+            padding: 20px;
+        }
+
+        #game-over {
+            display: none;
+        }
+
+        .status-pill {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 1rem;
+        }
+
+        #timer-container {
+            position: absolute;
+            top: 25px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(15, 23, 42, 0.9);
+            border: 2px solid #3b82f6;
+            padding: 12px 35px;
+            border-radius: 20px;
+            color: #60a5fa;
+            font-family: 'Orbitron';
+            font-weight: 900;
+            z-index: 30;
+            box-shadow: 0 0 30px rgba(59, 130, 246, 0.3);
+            letter-spacing: 2px;
+        }
+
+        .scrollbar-hide::-webkit-scrollbar {
+            display: none;
+        }
+
+        .scrollbar-hide {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        .gradient-text-blue {
+            background: linear-gradient(135deg, #60a5fa 0%, #2563eb 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="timer-container">
+        EVACUACIÓN: <span id="time-left">60</span>s
+    </div>
+
+    <div id="start-screen">
+        <div
+            class="bg-slate-900 border border-blue-500/30 p-10 rounded-[3rem] text-center max-w-md w-full shadow-[0_0_60px_rgba(59,130,246,0.2)]">
+            <h1 class="text-3xl font-black mb-4 uppercase gradient-text-blue italic tracking-tighter font-[Orbitron]">
+                BAMBETTO CITY</h1>
+            <p class="text-slate-400 mb-8 text-sm leading-relaxed">Los ciudadanos esperan en el portón. Clasifícalos en
+                sus sectores antes de que colapse la seguridad.</p>
+            <button id="start-btn"
+                class="bg-blue-600 hover:bg-blue-500 text-white w-full py-5 rounded-2xl font-black text-sm tracking-[0.2em] uppercase shadow-xl transition-all active:scale-95 shadow-blue-900/40">ABRIR
+                PORTÓN</button>
+        </div>
+    </div>
+
+    <div id="ui-container">
+        <nav class="absolute top-6 left-6 pointer-events-auto">
+            <a href="index.html"
+                class="flex items-center gap-2 text-blue-400 font-bold hover:text-blue-300 transition-colors">
+                <i data-lucide="arrow-left" class="w-5 h-5"></i>
+                <span class="text-sm uppercase tracking-widest font-[Orbitron]">Mapa</span>
+            </a>
+        </nav>
+
+        <div class="absolute top-4 right-4 flex justify-between items-center pointer-events-none">
+            <div class="bg-blue-900/80 border border-blue-500 px-5 py-2 rounded-full pointer-events-auto shadow-lg">
+                <p class="text-[10px] font-black text-blue-100 uppercase italic">NIVEL <span id="level-display">1</span>
+                </p>
+            </div>
+        </div>
+
+        <div class="bottom-bar p-6 pb-8">
+            <div class="grid grid-cols-3 gap-3 mb-6">
+                <div class="status-pill p-3 flex flex-col items-center justify-center min-h-[60px]">
+                    <p class="text-[9px] uppercase text-slate-500 font-bold mb-1 tracking-tighter">Ciudadano</p>
+                    <p id="objective-text" class="text-xs font-black italic tracking-widest text-blue-400">---</p>
+                </div>
+                <div class="status-pill p-3 flex flex-col items-center justify-center">
+                    <p class="text-[9px] uppercase text-slate-500 font-bold mb-1 tracking-tighter">En Espera</p>
+                    <div class="flex items-baseline gap-1">
+                        <span id="queue-count" class="text-lg font-black text-white">0</span>
+                    </div>
+                </div>
+                <div
+                    class="status-pill p-3 flex flex-col items-center justify-center border-blue-500/40 bg-blue-950/20">
+                    <p class="text-[9px] uppercase text-blue-500 font-bold mb-1 tracking-tighter">Zona Triaje</p>
+                    <p id="temp-info-text" class="text-[10px] text-slate-300 font-bold">VACÍO</p>
+                </div>
+            </div>
+
+            <div id="building-list" class="flex gap-3 overflow-x-auto pb-2 scrollbar-hide snap-x">
+                <!-- Dinámico -->
+            </div>
+        </div>
+    </div>
+
+    <div id="game-over">
+        <div class="bg-slate-900 border border-white/10 p-10 rounded-[3rem] text-center max-w-sm w-full shadow-2xl">
+            <h2 id="result-title" class="text-4xl font-black mb-3 uppercase text-white italic tracking-tighter">PROTOCOL
+                FAIL</h2>
+            <p id="result-desc" class="text-slate-400 mb-8 text-sm leading-relaxed">...</p>
+            <button id="restart-btn"
+                class="bg-blue-600 hover:bg-blue-500 text-white w-full py-5 rounded-2xl font-black text-sm tracking-widest uppercase shadow-xl transition-all shadow-blue-900/40">REINTENTAR</button>
+        </div>
+    </div>
+
+    <script>
+        // Use full Three.js CDN instead of relative path
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+    <script>
+        let scene, camera, renderer, raycaster, mouse;
+        let queue = [];
+        let buildings = [];
+        let activePerson = null;
+        let tempPerson = null;
+        let isDragging = false;
+        let gameActive = false;
+        let isTransitioning = false;
+        let currentLevel = 1;
+        let timeLeft = 60;
+        let timerInterval = null;
+        let hasWonLevel = false;
+        let zombies = [];
+        let triajeMesh = null;
+
+        const COLORS = {
+            blue: 0x3b82f6, yellow: 0xeab308, red: 0xef4444,
+            green: 0x22c55e, purple: 0xa855f7, cyan: 0x06b6d4,
+            locked: 0x1e293b, temp: 0x3b82f6
+        };
+
+        const BUILDING_HEIGHT = 16;
+        const ENTRANCE_Z = 25;
+        const SELECTION_ZONE = new THREE.Vector3(0, 0, 32);
+        const TEMP_HOLD_ZONE = new THREE.Vector3(22, 0, 35);
+
+        // Get URL parameters for level
+        const urlParams = new URLSearchParams(window.location.search);
+        currentLevel = parseInt(urlParams.get('level')) || 1;
+
+        function getLevelConfig(level) {
+            // Colors: start with 2 colors, up to 4 at high levels
+            const colorsCount = Math.min(4, 2 + Math.floor(level / 15));
+            const buildingsPerColor = (level % 3 === 0) ? 3 : 2; // Generally 3 every 3 levels, otherwise 2
+            const availableColors = ['blue', 'red', 'yellow', 'green', 'purple', 'cyan'];
+            const config = [];
+
+            let idCounter = 1;
+            const groupSpacing = 28; // Spacing between different color groups
+            const innerSpacing = 14; // Spacing between buildings of the same color
+
+            const startX = -((colorsCount - 1) * groupSpacing) / 2;
+
+            for (let c = 0; c < colorsCount; c++) {
+                const colorKey = availableColors[c];
+                const colorStartX = startX + (c * groupSpacing) - ((buildingsPerColor - 1) * innerSpacing) / 2;
+
+                for (let b = 0; b < buildingsPerColor; b++) {
+                    const id = `B${idCounter++}`;
+                    config.push({
+                        id: id,
+                        color: colorKey,
+                        hex: COLORS[colorKey],
+                        name: `${colorKey.toUpperCase()} - ${String.fromCharCode(65 + b)}`,
+                        cap: 1 + Math.floor(level / 12) + (b % 2),
+                        cur: 0,
+                        x: startX + (c * groupSpacing) + (b - (buildingsPerColor - 1) / 2) * 12,
+                        z: -15 - (b * 5), // Slight stagger in depth
+                        deps: [],
+                        unlocks: 'ABIERTO'
+                    });
+                }
+            }
+
+            // Dependencies: Building B depends on A, C depends on B
+            if (level > 2) {
+                const colorsUsed = availableColors.slice(0, colorsCount);
+                colorsUsed.forEach(col => {
+                    const colorGroup = config.filter(x => x.color === col);
+                    for (let i = 1; i < colorGroup.length; i++) {
+                        colorGroup[i].deps = [colorGroup[i - 1].id];
+                        colorGroup[i].unlocks = `BLOQ: ${colorGroup[i - 1].name}`;
+                    }
+                });
+            }
+
+            return config;
+        }
+
+        function init() {
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x020617);
+            scene.fog = new THREE.Fog(0x020617, 60, 180);
+
+            camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.set(0, 75, 85);
+            camera.lookAt(0, 0, 0);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.shadowMap.enabled = true;
+            document.body.appendChild(renderer.domElement);
+
+            raycaster = new THREE.Raycaster();
+            mouse = new THREE.Vector2();
+
+            document.getElementById('start-btn').addEventListener('click', () => {
+                document.getElementById('start-screen').style.display = 'none';
+                loadLevel(currentLevel);
+                lucide.createIcons();
+            });
+
+            document.getElementById('restart-btn').addEventListener('click', () => {
+                document.getElementById('game-over').style.display = 'none';
+                if (hasWonLevel) {
+                    currentLevel++;
+                    window.history.replaceState({}, '', `?level=${currentLevel}`);
+                    loadLevel(currentLevel);
+                } else {
+                    loadLevel(currentLevel);
+                }
+            });
+
+            window.addEventListener('resize', onResize);
+            window.addEventListener('mousedown', (e) => handleInteraction(e.clientX, e.clientY, true));
+            window.addEventListener('mousemove', (e) => handleInteraction(e.clientX, e.clientY, false));
+            window.addEventListener('mouseup', onEnd);
+            window.addEventListener('touchstart', (e) => {
+                handleInteraction(e.touches[0].clientX, e.touches[0].clientY, true);
+                e.preventDefault();
+            }, { passive: false });
+            window.addEventListener('touchmove', (e) => {
+                handleInteraction(e.touches[0].clientX, e.touches[0].clientY, false);
+                e.preventDefault();
+            }, { passive: false });
+            window.addEventListener('touchend', onEnd);
+
+            animate();
+        }
+
+        function loadLevel(level) {
+            if (timerInterval) clearInterval(timerInterval);
+
+            // Clean up scene properly
+            while (scene.children.length > 0) {
+                const obj = scene.children[0];
+                if (obj.geometry) obj.geometry.dispose();
+                if (obj.material) {
+                    if (Array.isArray(obj.material)) obj.material.forEach(m => m.dispose());
+                    else obj.material.dispose();
+                }
+                scene.remove(obj);
+            }
+
+            // Stronger lighting for citizens
+            scene.add(new THREE.AmbientLight(0xffffff, 0.5));
+            const sun = new THREE.DirectionalLight(0xffffff, 1.2);
+            sun.position.set(50, 150, 100);
+            sun.castShadow = true;
+            scene.add(sun);
+
+            queue = []; buildings = []; zombies = []; activePerson = null; tempPerson = null;
+            timeLeft = Math.max(30, 65 - (level * 1));
+            hasWonLevel = false;
+            gameActive = true; // Timer depends on this
+            isTransitioning = false;
+
+            document.getElementById('level-display').innerText = level;
+            document.getElementById('time-left').innerText = Math.floor(timeLeft);
+
+            createWorld();
+
+            const config = getLevelConfig(level);
+            config.forEach(data => {
+                const b = { ...data };
+                const group = new THREE.Group();
+
+                const body = new THREE.Mesh(
+                    new THREE.BoxGeometry(12, BUILDING_HEIGHT, 12),
+                    new THREE.MeshStandardMaterial({ color: COLORS.locked, roughness: 0.8, metalness: 0.5 })
+                );
+                body.position.y = BUILDING_HEIGHT / 2;
+                group.add(body);
+                b.body = body;
+
+                const frame = new THREE.BoxHelper(body, b.hex);
+                frame.position.y = BUILDING_HEIGHT / 2;
+                group.add(frame);
+
+                const sprite = new THREE.Sprite(new THREE.SpriteMaterial({
+                    map: createTextTexture(b.name, '#' + b.hex.toString(16).padStart(6, '0'), 36)
+                }));
+                sprite.position.y = BUILDING_HEIGHT + 6;
+                sprite.scale.set(14, 3.5, 1);
+                group.add(sprite);
+
+                b.dots = [];
+                const dotPerRow = Math.min(4, b.cap);
+                for (let i = 0; i < b.cap; i++) {
+                    const led = new THREE.Mesh(new THREE.SphereGeometry(0.8), new THREE.MeshBasicMaterial({ color: 0x000000 }));
+                    const row = Math.floor(i / dotPerRow);
+                    const col = i % dotPerRow;
+                    led.position.set(-4 + col * 2.5, BUILDING_HEIGHT + 0.8 + (row * 2), 5);
+                    group.add(led);
+                    b.dots.push(led);
+                }
+
+                group.position.set(b.x, 0, b.z);
+                scene.add(group);
+                b.group = group;
+                buildings.push(b);
+            });
+
+            spawnQueuePuzzle();
+            updateSystemState();
+            startTimer();
+        }
+
+        function createWorld() {
+            // Brown ground as requested
+            const ground = new THREE.Mesh(
+                new THREE.PlaneGeometry(600, 600),
+                new THREE.MeshStandardMaterial({ color: 0x452a1e, roughness: 1 })
+            );
+            ground.rotation.x = -Math.PI / 2;
+            ground.receiveShadow = true;
+            scene.add(ground);
+
+            const gridHelper = new THREE.GridHelper(600, 50, 0x1e293b, 0x22110a);
+            gridHelper.position.y = 0.05;
+            scene.add(gridHelper);
+
+            const wallMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.5, metalness: 0.8 });
+            const WALL_H = 15;
+
+            const createWall = (w, h, d, x, z) => {
+                const wall = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), wallMat);
+                wall.position.set(x, h / 2, z);
+                scene.add(wall);
+                const frame = new THREE.BoxHelper(wall, 0x3b82f6);
+                scene.add(frame);
+            };
+
+            createWall(200, WALL_H, 6, 0, -55);
+            createWall(6, WALL_H, 150, -60, 20);
+            createWall(6, WALL_H, 150, 60, 20);
+
+            createWall(50, WALL_H, 4, -35, ENTRANCE_Z);
+            createWall(50, WALL_H, 4, 35, ENTRANCE_Z);
+
+            const pilarMat = new THREE.MeshStandardMaterial({ color: 0x020617, metalness: 1 });
+            const p1 = new THREE.Mesh(new THREE.CylinderGeometry(3, 3, 22), pilarMat);
+            p1.position.set(-10, 11, ENTRANCE_Z);
+            scene.add(p1);
+            const p2 = new THREE.Mesh(new THREE.CylinderGeometry(3, 3, 22), pilarMat);
+            p2.position.set(10, 11, ENTRANCE_Z);
+            scene.add(p2);
+
+            triajeMesh = new THREE.Mesh(
+                new THREE.RingGeometry(5, 7, 32),
+                new THREE.MeshBasicMaterial({ color: 0x3b82f6, side: THREE.DoubleSide, transparent: true, opacity: 0.4 })
+            );
+            triajeMesh.rotation.x = -Math.PI / 2;
+            triajeMesh.position.set(TEMP_HOLD_ZONE.x, 0.4, TEMP_HOLD_ZONE.z);
+            scene.add(triajeMesh);
+
+            const triajeText = new THREE.Sprite(new THREE.SpriteMaterial({
+                map: createTextTexture("TRIAJE", "#3b82f6", 24)
+            }));
+            triajeText.position.set(TEMP_HOLD_ZONE.x, 10, TEMP_HOLD_ZONE.z);
+            triajeText.scale.set(12, 3, 1);
+            scene.add(triajeText);
+        }
+
+        function createTextTexture(text, color, size) {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = 512; canvas.height = 128;
+            ctx.font = `bold ${size}px Orbitron`;
+            ctx.textAlign = 'center'; ctx.fillStyle = color;
+            ctx.fillText(text, 256, 80);
+            return new THREE.CanvasTexture(canvas);
+        }
+
+        function createHuman(type) {
+            const group = new THREE.Group();
+            const mat = new THREE.MeshStandardMaterial({ color: COLORS[type], roughness: 0.3, metalness: 0.6 });
+            const head = new THREE.Mesh(new THREE.SphereGeometry(1.5, 16, 16), mat);
+            head.position.y = 5; group.add(head);
+            const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.5, 1), mat);
+            neck.position.y = 4; group.add(neck);
+            const body = new THREE.Mesh(new THREE.CapsuleGeometry(1, 2, 4, 8), mat);
+            body.position.y = 2.5; group.add(body);
+
+            // Halo glow
+            const halo = new THREE.Mesh(
+                new THREE.RingGeometry(2, 2.2, 32),
+                new THREE.MeshBasicMaterial({ color: COLORS[type], side: THREE.DoubleSide, transparent: true, opacity: 0.5 })
+            );
+            halo.rotation.x = Math.PI / 2;
+            halo.position.y = 0.1;
+            group.add(halo);
+
+            group.userData = { type, phase: Math.random() * 5 };
+            return group;
+        }
+
+        function spawnQueuePuzzle() {
+            let pool = [];
+            buildings.forEach(b => { for (let i = 0; i < b.cap; i++) pool.push(b.color); });
+            pool.sort(() => Math.random() - 0.5);
+            pool.forEach((type, i) => {
+                const p = createHuman(type);
+                p.position.set(0, 0, 55 + (i * 12));
+                scene.add(p); queue.push(p);
+            });
+            updateQueueVisuals();
+            checkAutoCall();
+        }
+
+        function startTimer() {
+            timerInterval = setInterval(() => {
+                if (!gameActive) return;
+                timeLeft -= 1;
+                document.getElementById('time-left').innerText = Math.max(0, Math.floor(timeLeft));
+                if (timeLeft <= 0) spawnZombies();
+            }, 1000);
+        }
+
+        function spawnZombies() {
+            clearInterval(timerInterval);
+            gameActive = false;
+            for (let i = 0; i < 20; i++) {
+                const z = new THREE.Mesh(new THREE.CapsuleGeometry(1.5, 2, 4, 8), new THREE.MeshBasicMaterial({ color: 0xff0000 }));
+                z.position.set((Math.random() - 0.5) * 30, 2, 70 + i * 8);
+                scene.add(z);
+                zombies.push(z);
+            }
+            gameOver("FALLO DE SEGURIDAD", "La horda ha penetrado el perímetro de Bambetto City.");
+        }
+
+        function checkAutoCall() {
+            if (!activePerson && queue.length > 0 && !isTransitioning && gameActive) {
+                isTransitioning = true;
+                const person = queue.shift();
+                let t = 0; const start = person.position.clone();
+                function move() {
+                    t += 0.05; person.position.lerpVectors(start, SELECTION_ZONE, t);
+                    person.position.y = Math.abs(Math.sin(t * 15)) * 3;
+                    if (t < 1) requestAnimationFrame(move);
+                    else {
+                        person.position.copy(SELECTION_ZONE);
+                        person.position.y = 0;
+                        activePerson = person;
+                        isTransitioning = false;
+                        updateQueueVisuals();
+                        updateUI();
+                    }
+                }
+                move();
+            }
+        }
+
+        function updateQueueVisuals() {
+            queue.forEach((p, i) => {
+                const targetZ = 55 + (i * 12);
+                new THREE.Vector3(0, 0, targetZ);
+                p.position.z = targetZ;
+            });
+            updateUI();
+        }
+
+        function handleInteraction(clientX, clientY, isStart) {
+            if (!gameActive) return;
+            mouse.x = (clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(clientY / window.innerHeight) * 2 + 1;
+            raycaster.setFromCamera(mouse, camera);
+
+            if (isStart) {
+                if (tempPerson && raycaster.intersectObject(tempPerson, true).length) {
+                    if (activePerson) {
+                        queue.unshift(activePerson);
+                        updateQueueVisuals();
+                    }
+                    activePerson = tempPerson;
+                    tempPerson = null;
+                    isDragging = true;
+                }
+                else if (activePerson && raycaster.intersectObject(activePerson, true).length) {
+                    isDragging = true;
+                }
+            } else if (isDragging && activePerson) {
+                const p = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+                const target = new THREE.Vector3();
+                raycaster.ray.intersectPlane(p, target);
+                activePerson.position.copy(target);
+                activePerson.position.y = 8;
+
+                if (activePerson.position.distanceTo(TEMP_HOLD_ZONE) < 12) {
+                    triajeMesh.material.opacity = 1.0;
+                    triajeMesh.scale.set(1.2, 1.2, 1.2);
+                } else {
+                    triajeMesh.material.opacity = 0.4;
+                    triajeMesh.scale.set(1, 1, 1);
+                }
+            }
+        }
+
+        function onEnd() {
+            if (!isDragging || !activePerson) return;
+            isDragging = false;
+            const type = activePerson.userData.type;
+
+            // Use 2D distance (ignore Y) for easier gameplay
+            const pos2D = new THREE.Vector2(activePerson.position.x, activePerson.position.z);
+            const triaje2D = new THREE.Vector2(TEMP_HOLD_ZONE.x, TEMP_HOLD_ZONE.z);
+            const distToTriaje = pos2D.distanceTo(triaje2D);
+
+            if (distToTriaje < 15) { // Increased radius from 11 to 15
+                if (!tempPerson) {
+                    tempPerson = activePerson;
+                    activePerson = null;
+                    resetTo(tempPerson, TEMP_HOLD_ZONE);
+                    setTimeout(checkAutoCall, 300);
+                } else {
+                    resetTo(activePerson, SELECTION_ZONE);
+                }
+            }
+            else if (activePerson.position.z < ENTRANCE_Z + 5) { // Slightly more lenient entrance check
+                let targetB = null;
+                for (let b of buildings) {
+                    const bPos2D = new THREE.Vector2(b.group.position.x, b.group.position.z);
+                    if (pos2D.distanceTo(bPos2D) < 18) { // Increased radius from 12 to 18
+                        targetB = b;
+                        break;
+                    }
+                }
+
+                if (targetB) {
+                    if (targetB.color !== type || targetB.isLocked || targetB.cur >= targetB.cap) {
+                        spawnZombies();
+                    } else {
+                        enterBuilding(activePerson, targetB);
+                        activePerson = null;
+                    }
+                } else {
+                    resetTo(activePerson, SELECTION_ZONE);
+                }
+            } else {
+                resetTo(activePerson, SELECTION_ZONE);
+            }
+
+            triajeMesh.material.opacity = 0.4;
+            triajeMesh.scale.set(1, 1, 1);
+            updateUI();
+        }
+
+        function resetTo(p, target) {
+            let t = 0; const start = p.position.clone();
+            function a() {
+                t += 0.15;
+                p.position.lerpVectors(start, target, t);
+                p.position.y = Math.sin(t * Math.PI) * 10;
+                if (t < 1) requestAnimationFrame(a);
+                else {
+                    p.position.y = 0;
+                    p.position.copy(target);
+                }
+            }
+            a();
+        }
+
+        function enterBuilding(p, b) {
+            let t = 0; const start = p.position.clone();
+            function a() {
+                t += 0.1; p.position.lerpVectors(start, new THREE.Vector3(b.group.position.x, 3, b.group.position.z), t);
+                p.scale.multiplyScalar(0.9);
+                if (t < 1) requestAnimationFrame(a); else {
+                    scene.remove(p);
+                    b.cur++;
+                    updateSystemState();
+                    checkWin();
+                    setTimeout(checkAutoCall, 300);
+                }
+            }
+            a();
+        }
+
+        function updateSystemState() {
+            buildings.forEach(b => {
+                b.isLocked = b.deps.length > 0 && !b.deps.every(id => {
+                    const depB = buildings.find(x => x.id === id);
+                    return depB && depB.cur >= depB.cap;
+                });
+                b.body.material.color.setHex(b.isLocked ? COLORS.locked : b.hex);
+                b.body.material.emissive.setHex(b.isLocked ? 0x000000 : b.hex);
+                b.body.material.emissiveIntensity = 0.2;
+                b.dots.forEach((dot, i) => dot.material.color.setHex(i < b.cur ? 0x4ade80 : 0x1e293b));
+            });
+            updateUI();
+        }
+
+        function updateUI() {
+            document.getElementById('queue-count').innerText = queue.length;
+            const obj = document.getElementById('objective-text');
+            if (activePerson) {
+                obj.innerText = activePerson.userData.type.toUpperCase();
+                obj.style.color = '#' + COLORS[activePerson.userData.type].toString(16).padStart(6, '0');
+            } else obj.innerText = "---";
+
+            const tInfo = document.getElementById('temp-info-text');
+            if (tempPerson) {
+                tInfo.innerText = "OCUPADO";
+                tInfo.className = "text-[10px] text-blue-400 font-black animate-pulse";
+            } else {
+                tInfo.innerText = "VACÍO";
+                tInfo.className = "text-[10px] text-slate-500 font-bold";
+            }
+
+            const list = document.getElementById('building-list');
+            list.innerHTML = '';
+            buildings.forEach(b => {
+                const card = document.createElement('div');
+                card.className = `flex-shrink-0 w-36 p-4 rounded-2xl border border-white/5 snap-center transition-all ${b.isLocked ? 'opacity-30 bg-slate-900' : 'bg-slate-800/80 shadow-lg'}`;
+                card.style.borderColor = b.isLocked ? 'rgba(255,255,255,0.05)' : '#' + b.hex.toString(16);
+                card.innerHTML = `
+                    <p class="text-[11px] font-black" style="color: #${b.hex.toString(16)}">${b.name}</p>
+                    <div class="flex justify-between items-center mt-1">
+                        <p class="text-white text-lg font-black">${b.cur}/${b.cap}</p>
+                        <i data-lucide="${b.isLocked ? 'lock' : 'unlock'}" class="w-3 h-3 text-slate-500"></i>
+                    </div>
+                    <p class="text-[8px] text-slate-400 mt-2 uppercase tracking-tighter">${b.unlocks}</p>
+                `;
+                list.appendChild(card);
+            });
+            lucide.createIcons();
+        }
+
+        function gameOver(t, d, stars = 0) {
+            gameActive = false;
+            const overScreen = document.getElementById('game-over');
+            overScreen.style.display = 'flex';
+
+            let starsHTML = '';
+            if (stars > 0) {
+                starsHTML = `<div class="flex justify-center gap-2 mb-4">`;
+                for (let i = 0; i < 3; i++) {
+                    starsHTML += `<span class="text-3xl ${i < stars ? 'text-yellow-400' : 'text-slate-700'}">⭐</span>`;
+                }
+                starsHTML += `</div>`;
+            }
+
+            document.getElementById('result-title').innerText = t;
+            document.getElementById('result-desc').innerHTML = (starsHTML || '') + d;
+            document.getElementById('restart-btn').innerText = hasWonLevel ? "CONTINUAR" : "REINTENTAR";
+        }
+
+        function checkWin() {
+            if (buildings.every(b => b.cur >= b.cap)) {
+                gameActive = false;
+                hasWonLevel = true;
+                clearInterval(timerInterval);
+
+                // Calculate stars based on percentage of time left
+                const initialTime = Math.max(30, 65 - (currentLevel * 1));
+                const ratio = timeLeft / initialTime;
+                let stars = 1;
+                if (ratio > 0.6) stars = 3;
+                else if (ratio > 0.3) stars = 2;
+
+                // Save progress
+                let currentProgress = parseInt(localStorage.getItem('bambetto_current_level')) || 1;
+                if (currentLevel === currentProgress) {
+                    localStorage.setItem('bambetto_current_level', currentProgress + 1);
+                }
+
+                // Save stars (only if better than before)
+                let starsData = JSON.parse(localStorage.getItem('bambetto_stars')) || {};
+                if (!starsData[currentLevel] || starsData[currentLevel] < stars) {
+                    starsData[currentLevel] = stars;
+                    localStorage.setItem('bambetto_stars', JSON.stringify(starsData));
+                }
+
+                gameOver("CIUDAD ASEGURADA", `Protocolo de nivel ${currentLevel} completado con éxito.`, stars);
+            }
+        }
+
+        function onResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            const time = Date.now() * 0.003;
+            if (gameActive) {
+                const bth = (p) => {
+                    p.scale.y = 1 + Math.sin(time * 3 + p.userData.phase) * 0.05;
+                    const halo = p.children.find(c => c.geometry.type === 'RingGeometry');
+                    if (halo) halo.material.opacity = 0.4 + Math.sin(time * 5) * 0.2;
+                };
+                queue.forEach(bth);
+                if (activePerson && !isDragging) bth(activePerson);
+                if (tempPerson) bth(tempPerson);
+            } else if (zombies.length > 0) {
+                zombies.forEach(z => {
+                    z.position.z -= 0.8;
+                    z.position.y = 2 + Math.abs(Math.sin(time * 10)) * 2;
+                });
+            }
+            renderer.render(scene, camera);
+        }
+
+        window.onload = init;
+    </script>
+</body>
+
+</html>

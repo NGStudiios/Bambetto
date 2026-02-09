@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bambetto - Mapa</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/layout.css">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        :root {
+            --node-size: 85px;
+            --glow-blue: #3b82f6;
+        }
+
+        body {
+            overflow: hidden;
+            background: var(--deep-blue);
+            color: #f8fafc;
+            margin-left: 0;
+            /* Override layout.css for map only */
+        }
+
+        .map-container {
+            height: 100vh;
+            overflow-y: auto;
+            overflow-x: hidden;
+            position: relative;
+            background:
+                radial-gradient(circle at 50% 10%, #1e293b 0%, var(--deep-blue) 70%),
+                url('https://www.transparenttextures.com/patterns/stardust.png');
+            perspective: 2000px;
+            padding-bottom: 200px;
+            scroll-behavior: smooth;
+        }
+
+        /* 3D Path Ground */
+        .level-nodes {
+            display: flex;
+            flex-direction: column-reverse;
+            align-items: center;
+            gap: 120px;
+            padding: 300px 20px 400px;
+            transform-style: preserve-3d;
+            transform: rotateX(25deg);
+            width: 100%;
+            position: relative;
+        }
+
+        /* Connecting SVG Path */
+        .path-svg {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%) translateZ(-30px);
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            pointer-events: none;
+            filter: drop-shadow(0 0 15px rgba(59, 130, 246, 0.4));
+        }
+
+        .level-node {
+            width: var(--node-size);
+            height: var(--node-size);
+            border-radius: 50%;
+            background: rgba(30, 41, 59, 0.7);
+            border: 2px solid rgba(255, 255, 255, 0.05);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 1.6rem;
+            color: rgba(255, 255, 255, 0.2);
+            position: relative;
+            z-index: 10;
+            transition: all 0.5s cubic-bezier(0.23, 1, 0.32, 1);
+            cursor: pointer;
+            box-shadow:
+                0 25px 50px -12px rgba(0, 0, 0, 0.7),
+                inset 0 2px 4px rgba(255, 255, 255, 0.05);
+            transform-style: preserve-3d;
+        }
+
+        /* Float shadow */
+        .node-shadow {
+            position: absolute;
+            bottom: -60px;
+            width: 70%;
+            height: 15px;
+            background: rgba(0, 0, 0, 0.6);
+            border-radius: 50%;
+            filter: blur(12px);
+            transform: rotateX(85deg);
+            transition: all 0.5s ease;
+            pointer-events: none;
+        }
+
+        .level-node:nth-child(odd) {
+            transform: translateX(-140px) translateZ(40px);
+        }
+
+        .level-node:nth-child(even) {
+            transform: translateX(140px) translateZ(80px);
+        }
+
+        .level-node:hover {
+            transform: scale(1.15) translateZ(120px) !important;
+            border-color: rgba(59, 130, 246, 0.5);
+            color: #fff;
+        }
+
+        .level-node.completed {
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+            color: #fff;
+            border-color: #60a5fa;
+            box-shadow:
+                0 0 30px rgba(37, 99, 235, 0.4),
+                0 20px 40px rgba(0, 0, 0, 0.5),
+                inset 0 4px 6px rgba(255, 255, 255, 0.2);
+        }
+
+        .level-node.current {
+            background: linear-gradient(135deg, #f59e0b 0%, #ea580c 100%);
+            color: #fff;
+            border-color: #fbbf24;
+            transform: scale(1.4) translateZ(150px) !important;
+            box-shadow:
+                0 0 60px rgba(245, 158, 11, 0.5),
+                0 30px 60px rgba(0, 0, 0, 0.6),
+                inset 0 4px 8px rgba(255, 255, 255, 0.3);
+            z-index: 100;
+        }
+
+        .level-node.locked {
+            filter: grayscale(1) opacity(0.3);
+            cursor: not-allowed;
+        }
+
+        /* 3D Star Container */
+        .stars-container {
+            position: absolute;
+            bottom: -55px;
+            display: flex;
+            gap: 8px;
+            transform: translateZ(30px);
+        }
+
+        .star-3d {
+            width: 22px;
+            height: 22px;
+            fill: url(#starGradient);
+            filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.4));
+            animation: starSpin 5s linear infinite;
+        }
+
+        @keyframes starSpin {
+            0% {
+                transform: rotateY(0deg) scale(1);
+            }
+
+            50% {
+                transform: rotateY(180deg) scale(1.1);
+            }
+
+            100% {
+                transform: rotateY(360deg) scale(1);
+            }
+        }
+
+        /* Player Avatar */
+        .avatar-container {
+            position: absolute;
+            top: -90px;
+            left: 50%;
+            transform: translateX(-50%);
+            animation: bounceAvatar 3s ease-in-out infinite;
+            filter: drop-shadow(0 20px 30px rgba(0, 0, 0, 0.8));
+        }
+
+        .avatar-glow {
+            width: 60px;
+            height: 60px;
+            background: rgba(245, 158, 11, 0.3);
+            border-radius: 50%;
+            filter: blur(20px);
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            animation: pulseGlow 2s ease-in-out infinite;
+        }
+
+        @keyframes bounceAvatar {
+
+            0%,
+            100% {
+                transform: translateX(-50%) translateY(0);
+            }
+
+            50% {
+                transform: translateX(-50%) translateY(-25px);
+            }
+        }
+
+        @keyframes pulseGlow {
+
+            0%,
+            100% {
+                transform: translate(-50%, -50%) scale(1);
+                opacity: 0.3;
+            }
+
+            50% {
+                transform: translate(-50%, -50%) scale(1.5);
+                opacity: 0.6;
+            }
+        }
+
+        /* Scrollbar */
+        .map-container::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .map-container::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+        }
+
+        @media (max-width: 768px) {
+            .level-node:nth-child(odd) {
+                transform: translateX(-70px) translateZ(30px);
+            }
+
+            .level-node:nth-child(even) {
+                transform: translateX(70px) translateZ(60px);
+            }
+        }
+    </style>
+</head>
+
+<body class="dark-theme">
+    <nav class="glass-nav" style="background: rgba(2, 6, 23, 0.8); height: 80px;">
+        <a href="index.html" class="logo gradient-text" style="font-size: 2rem;">Bambetto</a>
+        <div class="streak-badge" style="opacity: 0; pointer-events: none;">
+            <i class="fire-icon">🔥</i>
+        </div>
+    </nav>
+
+    <div class="map-container" id="map-scroll">
+        <!-- SVG Definitions for Gradients -->
+        <svg style="width:0;height:0;position:absolute;">
+            <defs>
+                <linearGradient id="starGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                    <stop offset="0%" style="stop-color:#fcd34d;stop-opacity:1" />
+                    <stop offset="100%" style="stop-color:#f59e0b;stop-opacity:1" />
+                </linearGradient>
+                <linearGradient id="pathGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                    <stop offset="0%" style="stop-color:#3b82f6;stop-opacity:0.8" />
+                    <stop offset="100%" style="stop-color:#1e4ed8;stop-opacity:0.4" />
+                </linearGradient>
+            </defs>
+        </svg>
+
+        <!-- Connectivity Path -->
+        <svg class="path-svg" id="level-path-svg" viewBox="0 0 400 2500" preserveAspectRatio="none">
+            <path d="" fill="none" stroke="url(#pathGradient)" stroke-width="10" stroke-dasharray="15 10"
+                stroke-linecap="round" />
+        </svg>
+
+        <div class="level-nodes" id="level-list">
+            <!-- Levels injected here -->
+        </div>
+    </div>
+
+    <!-- Sidebar Nav -->
+    <div class="side-bar">
+        <div class="lives-widget">
+            <span class="lives-count">5</span>
+            <span class="lives-icon">❤️</span>
+        </div>
+
+        <a href="index.html" class="side-item active">
+            <i data-lucide="map"></i>
+            <span>Mapa</span>
+        </a>
+
+        <a href="juegos.html" class="side-item">
+            <i data-lucide="layout-grid"></i>
+            <span>Arcade</span>
+        </a>
+
+        <a href="settings.html" class="side-item">
+            <i data-lucide="settings"></i>
+            <span>Ajustes</span>
+        </a>
+    </div>
+
+    <script src="js/main.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            renderLevelMap();
+            lucide.createIcons(); // Initialize Lucide icons
+        });
+
+        function createStarSVG() {
+            return `
+                <svg class="star-3d" viewBox="0 0 24 24">
+                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="url(#starGradient)"/>
+                </svg>
+            `;
+        }
+
+        function renderLevelMap() {
+            const container = document.getElementById('level-list');
+            const totalLevels = 100;
+            const currentProgress = parseInt(localStorage.getItem('bambetto_current_level')) || 1;
+            const starsData = JSON.parse(localStorage.getItem('bambetto_stars')) || {};
+
+            for (let i = totalLevels; i >= 1; i--) {
+                const node = document.createElement('div');
+                node.className = 'level-node';
+                node.innerText = i;
+
+                const shadow = document.createElement('div');
+                shadow.className = 'node-shadow';
+                node.appendChild(shadow);
+
+                if (i < currentProgress) {
+                    node.classList.add('completed');
+                    const stars = document.createElement('div');
+                    stars.className = 'stars-container';
+                    const numStars = starsData[i] || 0;
+                    let starsHTML = '';
+                    for (let s = 0; s < 3; s++) {
+                        starsHTML += `<svg class="star-3d" viewBox="0 0 24 24" style="opacity: ${s < numStars ? 1 : 0.2}">
+                            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="url(#starGradient)"/>
+                        </svg>`;
+                    }
+                    stars.innerHTML = starsHTML;
+                    node.appendChild(stars);
+                } else if (i === currentProgress) {
+                    node.classList.add('current');
+                    const avatarCont = document.createElement('div');
+                    avatarCont.className = 'avatar-container';
+                    avatarCont.innerHTML = `<div class="avatar-glow"></div><span style="font-size:3.5rem;">👽</span>`;
+                    node.appendChild(avatarCont);
+                } else if (i > currentProgress + 10) {
+                    continue;
+                } else {
+                    node.classList.add('locked');
+                    node.innerHTML = `<span>🔒</span>`;
+                }
+
+                node.onclick = () => {
+                    if (i <= currentProgress) {
+                        window.location.href = `evacuacion.html?level=${i}`;
+                    }
+                };
+
+                container.appendChild(node);
+            }
+
+            setTimeout(() => {
+                const current = document.querySelector('.level-node.current');
+                if (current) {
+                    current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            }, 500);
+        }
+    </script>
+</body>
+
+</html>

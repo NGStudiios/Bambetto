@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wordle Global - NeuroMente</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        .wordle-grid {
+            display: grid;
+            gap: 10px;
+            margin: 40px auto;
+            width: fit-content;
+        }
+
+        .wordle-row {
+            display: grid;
+            grid-template-columns: repeat(var(--cols), 1fr);
+            gap: 10px;
+        }
+
+        .wordle-cell {
+            width: 60px;
+            height: 60px;
+            border: 2px solid var(--glass-border);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            transition: 0.5s;
+        }
+
+        .correct {
+            background: var(--accent-teal);
+            border-color: var(--accent-teal);
+        }
+
+        .present {
+            background: var(--accent-gold);
+            border-color: var(--accent-gold);
+        }
+
+        .absent {
+            background: #334155;
+            border-color: #334155;
+        }
+
+        .keyboard-area {
+            max-width: 100%;
+            margin: 20px auto 0;
+            padding: 0 5px;
+        }
+
+        .keyboard-row {
+            display: flex;
+            justify-content: center;
+            width: 100%;
+            margin-bottom: 8px;
+            gap: 4px;
+        }
+
+        .key-letter {
+            font-size: 1rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            padding: 0;
+            height: 58px;
+            flex: 1;
+            min-width: 0;
+            border-radius: 4px;
+            border: none;
+            cursor: pointer;
+            background: #818384;
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: manipulation;
+        }
+
+
+
+        .key-special {
+            font-size: 0.75rem;
+            font-weight: 600;
+            padding: 0 10px;
+            height: 54px;
+            border-radius: 4px;
+            border: none;
+            cursor: pointer;
+            background: #818384;
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex: 1.5;
+            min-width: 40px;
+        }
+
+        @media (max-width: 400px) {
+            .keyboard-row {
+                gap: 2px;
+            }
+
+            .key-letter {
+                height: 50px;
+                font-size: 0.9rem;
+            }
+
+            .key-special {
+                height: 50px;
+                font-size: 0.7rem;
+            }
+        }
+
+        .correct {
+            background: var(--accent-teal) !important;
+            border-color: var(--accent-teal) !important;
+        }
+
+        .present {
+            background: var(--accent-gold) !important;
+            border-color: var(--accent-gold) !important;
+        }
+
+        .absent {
+            background: #3a3a3c !important;
+            border-color: #3a3a3c !important;
+        }
+    </style>
+</head>
+
+<body class="dark-theme">
+    <nav class="glass-nav">
+        <a href="index.html" class="logo">Mente</a>
+    </nav>
+
+    <main class="container">
+        <header class="game-header">
+            <a href="flags.html" class="back-btn" style="text-decoration: none;">← Volver</a>
+            <h1 class="gradient-text">Wordle de Países</h1>
+        </header>
+
+        <section id="wordle-container">
+            <div class="wordle-grid" id="grid"></div>
+            <div class="keyboard-area" id="keyboard"></div>
+        </section>
+    </main>
+
+    <div id="notification" class="notification hidden"></div>
+
+    <script src="js/data.js"></script>
+    <script src="js/main.js"></script>
+    <script>
+        let targetWord = "";
+        let currentGuess = "";
+        let rowIndex = 0;
+        let maxGuesses = 6;
+        let gameOver = false;
+
+        function initWordle() {
+            // Pick a country with 5-7 letters for best experience
+            const filtered = countriesData.filter(c => c.name.length >= 4 && c.name.length <= 8 && !c.name.includes(" "));
+            const country = filtered[Math.floor(Math.random() * filtered.length)];
+            targetWord = normalize(country.name.toUpperCase());
+            console.log("Target:", targetWord);
+
+            const grid = document.getElementById('grid');
+            grid.innerHTML = '';
+            grid.style.setProperty('--cols', targetWord.length);
+
+            for (let i = 0; i < maxGuesses; i++) {
+                const row = document.createElement('div');
+                row.className = 'wordle-row';
+                for (let j = 0; j < targetWord.length; j++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'wordle-cell';
+                    cell.id = `cell-${i}-${j}`;
+                    row.appendChild(cell);
+                }
+                grid.appendChild(row);
+            }
+            renderKeyboard();
+        }
+
+        function normalize(s) {
+            return s.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+        }
+
+        function renderKeyboard() {
+            const kb = document.getElementById('keyboard');
+            kb.innerHTML = '';
+
+            // Mobile-like layout
+            const rows = [
+                'QWERTYUIOP',
+                'ASDFGHJKLÑ',
+                'ZXCVBNM'
+            ];
+
+            rows.forEach((rowStr, index) => {
+                const rowDiv = document.createElement('div');
+                rowDiv.className = 'keyboard-row';
+                rowDiv.style.display = 'flex';
+                rowDiv.style.justifyContent = 'center';
+                rowDiv.style.gap = '4px'; // Tighter gap for mobile
+                rowDiv.style.marginBottom = '6px';
+
+                // Add ENTER at start of last row
+                if (index === 2) {
+                    const ent = document.createElement('button');
+                    ent.innerText = 'ENTER';
+                    ent.className = 'key-special';
+                    ent.onclick = () => handleKey('Enter');
+                    rowDiv.appendChild(ent);
+                }
+
+                rowStr.split('').forEach(l => {
+                    const b = document.createElement('button');
+                    b.innerText = l;
+                    b.className = 'key-letter';
+                    b.id = `key-${l}`; // To update colors later
+                    b.onclick = () => handleKey(l);
+                    rowDiv.appendChild(b);
+                });
+
+                // Add DEL at end of last row
+                if (index === 2) {
+                    const del = document.createElement('button');
+                    del.innerText = '⌫'; // Icon or shorter text
+                    del.className = 'key-special';
+                    del.onclick = () => handleKey('Backspace');
+                    rowDiv.appendChild(del);
+                }
+
+                kb.appendChild(rowDiv);
+            });
+        }
+
+        function handleKey(key) {
+            if (gameOver) return;
+            if (key === 'Enter') {
+                if (currentGuess.length === targetWord.length) submitGuess();
+                else showNotification('Letras insuficientes');
+            } else if (key === 'Backspace' || key === 'Delete') {
+                currentGuess = currentGuess.slice(0, -1);
+                updateRow();
+            } else if (/^[A-ZÑ]$/i.test(key) && currentGuess.length < targetWord.length) {
+                currentGuess += key.toUpperCase();
+                updateRow();
+            }
+        }
+
+        function updateRow() {
+            for (let i = 0; i < targetWord.length; i++) {
+                const cell = document.getElementById(`cell-${rowIndex}-${i}`);
+                cell.innerText = currentGuess[i] || '';
+            }
+        }
+
+        function submitGuess() {
+            const row = rowIndex;
+            const guess = currentGuess;
+            let tempTarget = targetWord.split('');
+
+            // First pass: Green
+            const colors = new Array(targetWord.length).fill('absent');
+            for (let i = 0; i < targetWord.length; i++) {
+                if (guess[i] === targetWord[i]) {
+                    colors[i] = 'correct';
+                    tempTarget[i] = null;
+                }
+            }
+
+            // Second pass: Yellow
+            for (let i = 0; i < targetWord.length; i++) {
+                if (colors[i] === 'correct') continue;
+                const idx = tempTarget.indexOf(guess[i]);
+                if (idx !== -1) {
+                    colors[i] = 'present';
+                    tempTarget[idx] = null;
+                }
+            }
+
+            // Animate
+            for (let i = 0; i < targetWord.length; i++) {
+                const cell = document.getElementById(`cell-${row}-${i}`);
+                setTimeout(() => {
+                    cell.classList.add(colors[i]);
+                }, i * 100);
+
+                // Update keyboard colors
+                const keyBtn = document.getElementById(`key-${guess[i]}`);
+                if (keyBtn) {
+                    // correct overrides everything, present overrides absent/nothing
+                    if (colors[i] === 'correct') {
+                        keyBtn.className = 'key-letter correct';
+                    } else if (colors[i] === 'present' && !keyBtn.classList.contains('correct')) {
+                        keyBtn.className = 'key-letter present';
+                    } else if (colors[i] === 'absent' && !keyBtn.classList.contains('correct') && !keyBtn.classList.contains('present')) {
+                        keyBtn.className = 'key-letter absent';
+                    }
+                }
+            }
+
+            if (guess === targetWord) {
+                gameOver = true;
+                showNotification('¡Excelente! País adivinado.');
+                markDayComplete();
+            } else if (rowIndex === maxGuesses - 1) {
+                gameOver = true;
+                showNotification(`Fin del juego. Era: ${targetWord}`);
+            } else {
+                rowIndex++;
+                currentGuess = "";
+            }
+        }
+
+        window.addEventListener('keydown', (e) => handleKey(e.key));
+        document.addEventListener('DOMContentLoaded', initWordle);
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Arcade - Bambetto</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/layout.css">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        .games-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 30px;
+            padding: 40px 0 100px;
+        }
+
+        @media (min-width: 768px) {
+            .games-grid {
+                grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            }
+        }
+
+        .game-card {
+            background: rgba(30, 41, 59, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 28px;
+            padding: 20px;
+            text-decoration: none;
+            color: inherit;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .game-card:hover {
+            transform: translateY(-10px) scale(1.02);
+            background: rgba(30, 41, 59, 0.6);
+            border-color: var(--accent-blue);
+            box-shadow: 0 30px 60px -12px rgba(0, 0, 0, 0.5);
+        }
+
+        .game-card img {
+            width: 100%;
+            height: 180px;
+            object-fit: cover;
+            border-radius: 20px;
+            filter: brightness(0.8);
+            transition: all 0.4s ease;
+        }
+
+        .game-card:hover img {
+            filter: brightness(1);
+        }
+
+        .game-info h3 {
+            font-size: 1.5rem;
+            margin-bottom: 5px;
+            color: #fff;
+        }
+
+        .game-info p {
+            font-size: 0.95rem;
+            color: var(--text-slate);
+            margin-bottom: 15px;
+            line-height: 1.4;
+        }
+
+        .btn-play {
+            background: var(--accent-blue);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 14px;
+            font-weight: 700;
+            display: inline-block;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+
+        .game-card:hover .btn-play {
+            box-shadow: 0 0 20px rgba(59, 130, 246, 0.5);
+        }
+    </style>
+</head>
+
+<body class="dark-theme">
+    <nav class="glass-nav">
+        <a href="index.html" class="logo gradient-text" style="font-size: 2rem;">Bambetto</a>
+    </nav>
+
+    <!-- Sidebar Nav -->
+    <div class="side-bar">
+        <div class="lives-widget">
+            <span class="lives-count">5</span>
+            <span class="lives-icon">❤️</span>
+        </div>
+
+        <a href="index.html" class="side-item">
+            <i data-lucide="map"></i>
+            <span>Mapa</span>
+        </a>
+
+        <a href="juegos.html" class="side-item active">
+            <i data-lucide="layout-grid"></i>
+            <span>Arcade</span>
+        </a>
+
+        <a href="settings.html" class="side-item">
+            <i data-lucide="settings"></i>
+            <span>Ajustes</span>
+        </a>
+    </div>
+
+    <main class="container">
+        <header class="section-header" style="text-align: center; margin-bottom: 40px;">
+            <h1 class="gradient-text" style="font-size: 3.5rem;">Arcade</h1>
+            <p style="color: var(--text-slate); font-size: 1.2rem;">Colección de minijuegos para potenciar tu cerebro.
+            </p>
+        </header>
+
+        <div class="games-grid">
+            <!-- Matrix Game -->
+            <a href="matrix.html" class="game-card">
+                <img src="https://images.unsplash.com/photo-1550751827-4bd374c3f58b?auto=format&fit=crop&w=800&q=80"
+                    alt="Matrix">
+                <div class="game-info">
+                    <h3>Secuencia Matrix</h3>
+                    <p>Memoria visual y expansión de patrones.</p>
+                    <span class="btn-play">Jugar</span>
+                </div>
+            </a>
+
+            <!-- Color Pop Game -->
+            <a href="color-blocks.html" class="game-card">
+                <img src="https://images.unsplash.com/photo-1557683311-eac922347aa1?auto=format&fit=crop&w=800&q=80"
+                    alt="Color Pop">
+                <div class="game-info">
+                    <h3>Color Pop</h3>
+                    <p>Agudeza visual y discriminación cromática.</p>
+                    <span class="btn-play">Jugar</span>
+                </div>
+            </a>
+
+            <!-- Flags Game -->
+            <a href="flags.html" class="game-card">
+                <img src="https://images.unsplash.com/photo-1526778548025-fa2f459cd5c1?auto=format&fit=crop&w=800&q=80"
+                    alt="Banderas">
+                <div class="game-info">
+                    <h3>Banderas</h3>
+                    <p>Identifica naciones a través de sus colores.</p>
+                    <span class="btn-play">Jugar</span>
+                </div>
+            </a>
+
+            <!-- Sudoku Game -->
+            <a href="sudoku.html" class="game-card">
+                <img src="https://images.unsplash.com/photo-1611996575749-79a3a250f948?auto=format&fit=crop&w=800&q=80"
+                    alt="Sudoku">
+                <div class="game-info">
+                    <h3>Sudoku</h3>
+                    <p>Lógica numérica en su máxima expresión.</p>
+                    <span class="btn-play">Jugar</span>
+                </div>
+            </a>
+
+            <!-- Wordle Palabras -->
+            <a href="wordle-palabras.html" class="game-card">
+                <img src="https://images.unsplash.com/photo-1519791883288-dc8bd696e667?auto=format&fit=crop&w=800&q=80"
+                    alt="Wordle">
+                <div class="game-info">
+                    <h3>Wordle</h3>
+                    <p>Encuentra la palabra oculta del día.</p>
+                    <span class="btn-play">Jugar</span>
+                </div>
+            </a>
+
+            <!-- Tetris -->
+            <a href="tetris.html" class="game-card">
+                <img src="https://images.unsplash.com/photo-1614294148960-9aa740632a87?auto=format&fit=crop&w=800&q=80"
+                    alt="Tetris">
+                <div class="game-info">
+                    <h3>Tetris</h3>
+                    <p>Velocidad de reacción y gestión espacial.</p>
+                    <span class="btn-play">Jugar</span>
+                </div>
+            </a>
+        </div>
+    </main>
+
+    <script src="js/main.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+        });
+    </script>
+</body>
+
+</html>
+
+</html>

@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ajustes - Bambetto</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/layout.css">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        .settings-container {
+            max-width: 600px;
+            margin: 40px auto;
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+        }
+
+        .setting-section {
+            background: rgba(30, 41, 59, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 28px;
+            padding: 30px;
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+        }
+
+        .setting-row {
+            margin-bottom: 30px;
+        }
+
+        .setting-row label {
+            display: block;
+            margin-bottom: 12px;
+            font-weight: 700;
+            color: #fff;
+            font-size: 1.1rem;
+        }
+
+        .setting-row p {
+            font-size: 0.95rem;
+            color: var(--text-slate);
+            margin-bottom: 20px;
+            line-height: 1.5;
+        }
+
+        .danger-btn {
+            background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%);
+            color: white;
+            border: none;
+            padding: 16px;
+            border-radius: 16px;
+            font-weight: 700;
+            width: 100%;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 10px 20px rgba(239, 68, 68, 0.2);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .danger-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 30px rgba(239, 68, 68, 0.4);
+            filter: brightness(1.1);
+        }
+
+        .danger-btn:active {
+            transform: translateY(-1px);
+        }
+    </style>
+</head>
+
+<body class="dark-theme">
+    <nav class="glass-nav">
+        <a href="index.html" class="logo gradient-text" style="font-size: 2rem;">Bambetto</a>
+    </nav>
+
+    <!-- Sidebar Nav -->
+    <div class="side-bar">
+        <div class="lives-widget">
+            <span class="lives-count">5</span>
+            <span class="lives-icon">❤️</span>
+        </div>
+
+        <a href="index.html" class="side-item">
+            <i data-lucide="map"></i>
+            <span>Mapa</span>
+        </a>
+
+        <a href="juegos.html" class="side-item">
+            <i data-lucide="layout-grid"></i>
+            <span>Arcade</span>
+        </a>
+
+        <a href="settings.html" class="side-item active">
+            <i data-lucide="settings"></i>
+            <span>Ajustes</span>
+        </a>
+    </div>
+
+    <main class="container">
+        <header class="section-header" style="text-align: center; margin-bottom: 40px;">
+            <h1 class="gradient-text" style="font-size: 3.5rem;">Ajustes</h1>
+            <p style="color: var(--text-slate); font-size: 1.2rem;">Configura tu experiencia en Bambetto.</p>
+        </header>
+
+        <div class="settings-container">
+            <div class="setting-section">
+                <div class="setting-row">
+                    <label>Gestión de Datos</label>
+                    <p>
+                        Esta acción eliminará de forma permanente todo tu progreso en el mapa, estrellas obtenidas,
+                        récords en minijuegos y configuraciones locales.
+                    </p>
+                    <button onclick="deleteAllData()" class="danger-btn">
+                        Borrar Registro Completo
+                    </button>
+                </div>
+            </div>
+
+            <div class="setting-section" style="text-align: center;">
+                <p style="margin-bottom: 0;">Versión 2.0.0 "Nova"</p>
+            </div>
+        </div>
+    </main>
+
+    <script src="js/main.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+        });
+
+        function deleteAllData() {
+            if (confirm('⚠️ ¿Estás seguro de que quieres borrar TODO tu progreso?\n\nEsta acción no se puede deshacer.')) {
+                if (confirm('Última confirmación: Se borrarán todos tus récords, racha y datos guardados.')) {
+                    localStorage.clear();
+                    alert('✅ Todos los datos han sido eliminados');
+                    window.location.href = 'index.html';
+                }
+            }
+        }
+    </script>
+</body>
+
+</html>
+
+</html>
